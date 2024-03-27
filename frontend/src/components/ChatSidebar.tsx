@@ -1,32 +1,27 @@
-import DocumentDetail from "./DocumentDetail";
 import { Conversation } from "../common/types";
 import { getDateTime } from "../common/utilities";
-import { Params } from "react-router-dom";
 import {
   ChatBubbleLeftRightIcon,
   PlusCircleIcon,
 } from "@heroicons/react/24/outline";
 
 interface ChatSidebarProps {
-  conversation: Conversation;
-  params: Params;
+  conversations: Conversation[];
   addConversation: () => Promise<void>;
-  switchConversation: (e: React.MouseEvent<HTMLButtonElement>) => void;
-  conversationListStatus: "idle" | "loading";
+  switchConversation: (id: string) => void;
+  selectedConversationId?: string;
+  conversationListStatus: string;
 }
 
 const ChatSidebar: React.FC<ChatSidebarProps> = ({
-  conversation,
-  params,
+  conversations,
   addConversation,
   switchConversation,
+  selectedConversationId,
   conversationListStatus,
 }) => {
   return (
     <div className="col-span-4 h-full">
-      <div className="bg-gray-100 p-5">
-        <DocumentDetail {...conversation.document} />
-      </div>
       <div className="px-3 pt-3 pb-5">
         {conversationListStatus === "idle" && (
           <button
@@ -63,27 +58,20 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
             Start a new conversation
           </button>
         )}
-        {conversation &&
-          conversation.document.conversations.map((conversation, i) => (
+        {conversations.map((conversation, i) => (
             <div key={i}>
-              {params.conversationid === conversation.conversationid && (
+              {conversation.conversationid == selectedConversationId && (
                 <button
-                  disabled={
-                    params.conversationid === conversation.conversationid
-                  }
+                  disabled
                   className="bg-gray-500 text-white w-full inline-flex items-center mt-2 px-4 py-2.5 border border-gray-100 rounded"
                 >
                   <ChatBubbleLeftRightIcon className="w-4 h-4 mr-2" />
                   {getDateTime(conversation.created)}
                 </button>
               )}
-              {params.conversationid !== conversation.conversationid && (
+              {conversation.conversationid != selectedConversationId && (
                 <button
-                  id={conversation.conversationid}
-                  onClick={switchConversation}
-                  disabled={
-                    params.conversationid === conversation.conversationid
-                  }
+                  onClick={() => switchConversation(conversation.conversationid)}
                   className="bg-gray-50 w-full inline-flex items-center mt-2 px-4 py-2.5 border border-gray-100 rounded hover:bg-gray-200"
                 >
                   <ChatBubbleLeftRightIcon className="w-4 h-4 mr-2" />

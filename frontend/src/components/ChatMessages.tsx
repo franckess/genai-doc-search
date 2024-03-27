@@ -1,9 +1,9 @@
 import { PaperAirplaneIcon } from "@heroicons/react/24/outline";
 import Loading from "../../public/loading-dots.svg";
-import { Conversation } from "../common/types";
+import { ConversationDetail } from "../common/types";
 
 interface ChatMessagesProps {
-  conversation: Conversation;
+  conversation: ConversationDetail;
   messageStatus: string;
   handlePromptChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
   handleKeyPress: (event: React.KeyboardEvent<HTMLInputElement>) => void;
@@ -23,7 +23,7 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
     <div className="flex flex-col justify-between h-full overflow-y-auto col-span-8 p-5 border-l border-gray-200">
       <div className="pb-5">
         <div className="grid gap-5">
-          {conversation.messages.map((message, i) => (
+          {conversation.messages?.map((message, i) => (
             <div
               className={`${
                 message.type === "ai"
@@ -60,9 +60,7 @@ const ChatMessages: React.FC<ChatMessagesProps> = ({
                 ? "block w-full p-4 pl-4 text-sm text-gray-500 border border-gray-200 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500"
                 : "block w-full p-4 pl-4 text-sm text-gray-900 border border-gray-200 rounded-lg bg-gray-50 focus:ring-blue-500 focus:border-blue-500"
             }
-            placeholder={
-              "Ask " + conversation.document.filename + " anything..."
-            }
+            placeholder={"Ask something..."}
           />
           {messageStatus === "idle" && (
             <button

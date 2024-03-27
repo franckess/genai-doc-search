@@ -2,13 +2,6 @@
 
 This sample application allows you to ask natural language questions of any PDF document you upload. It combines the text generation and analysis capabilities of an LLM with a vector search of the document content. The solution uses serverless services such as [Amazon Bedrock](https://aws.amazon.com/bedrock/) to access foundational models, [AWS Lambda](https://aws.amazon.com/lambda/) to run [LangChain](https://github.com/hwchase17/langchain), and [Amazon DynamoDB](https://aws.amazon.com/dynamodb/) for conversational memory.
 
-See the [accompanying blog post on the AWS Serverless Blog](https://aws.amazon.com/blogs/compute/building-a-serverless-document-chat-with-aws-lambda-and-amazon-bedrock/) for a detailed description and follow the deployment instructions below to get started.
-
-<p float="left">
-  <img src="preview-1.png" width="49%" />
-  <img src="preview-2.png" width="49%" />
-</p>
-
 > **Warning**
 > This application is not ready for production use. It was written for demonstration and educational purposes. Review the [Security](#security) section of this README and consult with your security team before deploying this stack. No warranty is implied in this example.
 
@@ -19,7 +12,6 @@ See the [accompanying blog post on the AWS Serverless Blog](https://aws.amazon.c
 
 - [Amazon Bedrock](https://aws.amazon.com/de/bedrock/) for serverless embedding and inference
 - [LangChain](https://github.com/hwchase17/langchain) to orchestrate a Q&A LLM chain
-- [FAISS](https://github.com/facebookresearch/faiss) vector store
 - [Amazon DynamoDB](https://aws.amazon.com/dynamodb/) for serverless conversational memory
 - [AWS Lambda](https://aws.amazon.com/lambda/) for serverless compute
 - Frontend built in [React](https://react.dev/), [TypeScript](https://www.typescriptlang.org/), [TailwindCSS](https://tailwindcss.com/), and [Vite](https://vitejs.dev/).
@@ -28,12 +20,12 @@ See the [accompanying blog post on the AWS Serverless Blog](https://aws.amazon.c
 
 ## How the application works
 
-![Serverless PDF Chat architecture](architecture.png "Serverless PDF Chat architecture")
+![Architecture](architecture.png)
 
-1. A user uploads a PDF document into an [Amazon S3](https://aws.amazon.com/s3/) bucket through a static web application frontend.
-1. This upload triggers a metadata extraction and document embedding process. The process converts the text in the document into vectors. The vectors are loaded into a vector index and stored in S3 for later use.
-1. When a user chats with a PDF document and sends a prompt to the backend, a Lambda function retrieves the index from S3 and searches for information related to the prompt.
-1. A LLM then uses the results of this vector search, previous messages in the conversation, and its general-purpose capabilities to formulate a response to the user.
+- User uploads a PDF document into an [Amazon S3](https://aws.amazon.com/s3/) bucket through a static web application frontend.
+- This upload triggers a metadata extraction and document embedding process. The process converts the text in the document into vectors. The vectors are loaded into a vector db (OpenSearch) via the Knowledge Base feature of Bedrock.
+- When a user starts a conversation and sends a prompt to the backend, a Lambda function retrieves information related to the prompt from the bedrock knowledge base factoring in any previous conversation history.
+- LLM then uses this context and general-purpose capabilities to formulate a response to the user.
 
 ## Deployment instructions
 
@@ -60,7 +52,7 @@ By default, this application uses **Titan Embeddings G1 - Text** to generate emb
 > Before you can use these models with this application, **you must request access in the Amazon Bedrock console**. See the [Model access](https://docs.aws.amazon.com/bedrock/latest/userguide/model-access.html) section of the Bedrock User Guide for detailed instructions.
 > By default, this application is configured to use Amazon Bedrock in the `us-east-1` Region, make sure you request model access in that Region (this does not have to be the same Region that you deploy this stack to).
 
-If you want to change the default models or Bedrock Region, edit `Bedrock` and `BedrockEmbeddings` in `backend/src/generate_response/main.py` and `backend/src/generate_embeddings/main.py`:
+If you want to change the default models or Bedrock Region, edit `backend/src/generate_response/main.py`:
 
 ```python
 Bedrock(
@@ -69,7 +61,7 @@ Bedrock(
 )
 ```
 
-If you select models other than the default, you must also adjust the IAM permissions of the `GenerateEmbeddingsFunction` and `GenerateResponseFunction` resources in the AWS SAM template:
+If you select models other than the default, you must also adjust the IAM permissions of the `GenerateResponseFunction` resources in the AWS SAM template:
 
 ```yaml
 GenerateResponseFunction:
@@ -79,12 +71,11 @@ GenerateResponseFunction:
     Policies:
       # other policies
       - Statement:
-          - Sid: "BedrockScopedAccess"
+          - Sid: "BedrockModel"
             Effect: "Allow"
             Action: "bedrock:InvokeModel"
             Resource:
               - "arn:aws:bedrock:*::foundation-model/anthropic.claude-v2" # adjust with different model
-              - "arn:aws:bedrock:*::foundation-model/amazon.titan-embed-text-v1" # adjust with different model
 ```
 
 ### Deploy the application with AWS SAM
@@ -101,8 +92,6 @@ GenerateResponseFunction:
    ```bash
    sam deploy --guided
    ```
-
-1. For **Stack Name**, choose `serverless-pdf-chat`.
 
 1. For the remaining options, keep the defaults by pressing the enter key.
 
@@ -128,6 +117,21 @@ Value               https://abcd1234.execute-api.us-east-1.amazonaws.com/dev/
 ```
 
 You can find the same outputs in the `Outputs` tab of the `serverless-pdf-chat` stack in the AWS CloudFormation console. In the next section, you will use these outputs to run the React frontend locally and connect to the deployed resources in AWS.
+
+### Amazon Knowledge Base for Bedrock setup
+
+Currently cloudformation does not natively support provisioning knowledge bases for bedrock. As such you'll need to manually create the knowledge base in the AWS console using the steps below:
+
+1. In the AWS console for Bedrock, click `Knowledge Base` in the left menu then `Create knowledge base`.
+
+1. Follow the prompts and select the following:  
+   Data source: S3 bucket created by SAM i.e. `{stack-name}-{region}-{account}`.  
+   Embeddings model: e.g. Titan Embeddings G1 -Text  
+   Vector database: Quick create new vector store (OpenSearch)
+
+1. Once the knowledge base is setup, add a SSM parameter in the same region as the SAM stack that contains details of the knowledge base. The application will use these details for connecting. For example if the stack was called `serverless-pdf-chat`, then the following SSM parameter is required:  
+    - Name: `/serverless-pdf-chat/knowledge-base` 
+    - Value (json string): `{"knowledgeBaseId": "xyz", "dataSourceId": "xyz"}`
 
 ### Run the React frontend locally
 
@@ -244,7 +248,7 @@ This application was written for demonstration and educational purposes and not 
 
 - [API Gateway access logging](https://docs.aws.amazon.com/apigateway/latest/developerguide/set-up-logging.html#set-up-access-logging-using-console) and [usage plans](https://docs.aws.amazon.com/apigateway/latest/developerguide/api-gateway-api-usage-plans.html) are not activiated in this code sample. Similarly, [S3 access logging](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-s3-bucket-loggingconfig.html) is currently not enabled.
 
-- In order to simplify the setup of the demo, this solution uses AWS managed policies associated to IAM roles that contain wildcards on resources. Please consider to further scope down the policies as you see fit according to your needs. Please note that there is a resource wildcard on the AWS managed `AWSLambdaSQSQueueExecutionRole`. This is a known behaviour, see [this GitHub issue](https://github.com/aws/serverless-application-model/issues/2118) for details.
+- In order to simplify the setup of the demo, this solution uses AWS managed policies associated to IAM roles that contain wildcards on resources. Please consider to further scope down the policies as you see fit according to your needs.
 
 - If your security controls require inspecting network traffic, consider [adjusting the AWS SAM template](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-resource-function.html) to attach the Lambda functions to a VPC via its [`VpcConfig`](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-lambda-function-vpcconfig.html).
 

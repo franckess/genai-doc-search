@@ -1,7 +1,5 @@
 import os, json
-from datetime import datetime
 import boto3
-import shortuuid
 from aws_lambda_powertools import Logger
 
 CONVERSATION_TABLE = os.environ["CONVERSATION_TABLE"]
@@ -15,21 +13,26 @@ logger = Logger()
 @logger.inject_lambda_context(log_event=True)
 def lambda_handler(event, context):
     user_id = event["requestContext"]["authorizer"]["claims"]["sub"]
-    conversation_id = shortuuid.uuid()
-    timestamp = datetime.utcnow()
-    timestamp_str = timestamp.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
-    
-    conversation_table.put_item(Item={
-        "userid": user_id,
-        "conversationid": conversation_id,
-        "created": timestamp_str,
-    })
+    conversation_id = event["pathParameters"]["conversationid"]
 
-    conversation_history_table.put_item(Item={
-        "UserId": user_id,
-        "ConversationId": conversation_id,
-        "History": []
-    })
+    response = conversation_table.get_item(
+        Key={"userid": user_id, "conversationid": conversation_id}
+    )
+
+    history_response = conversation_history_table.get_item(
+        Key={"UserId": user_id, "ConversationId": conversation_id}
+    )
+
+    item = response["Item"]
+    history_item = history_response["Item"]
+
+    conversation = {
+        "userid": item["userid"],
+        "conversationid": item["conversationid"],
+        "created": item["created"],
+        "messages": history_item["History"]
+    }
+    logger.info({"conversation": conversation})
 
     return {
         "statusCode": 200,
@@ -39,5 +42,10 @@ def lambda_handler(event, context):
             "Access-Control-Allow-Origin": "*",
             "Access-Control-Allow-Methods": "*",
         },
-        "body": json.dumps({"conversationid": conversation_id}),
+        "body": json.dumps(
+            {
+                "conversation": conversation,
+            },
+            default=str
+        ),
     }

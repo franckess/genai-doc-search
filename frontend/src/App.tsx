@@ -37,11 +37,15 @@ let router = createBrowserRouter([
     children: [
       {
         index: true,
-        Component: Documents,
+        Component: Chat,
       },
       {
-        path: "/doc/:documentid/:conversationid",
+        path: "conversations/:conversationid",
         Component: Chat,
+      },
+      {
+        path: "documents",
+        Component: Documents,
       },
     ],
   },

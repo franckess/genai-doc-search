@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { API } from "aws-amplify";
-import { Link } from "react-router-dom";
 import DocumentDetail from "./DocumentDetail";
 import { ArrowPathRoundedSquareIcon } from "@heroicons/react/24/outline";
 import { Document } from "../common/types";
@@ -12,7 +11,7 @@ const DocumentList: React.FC = () => {
 
   const fetchData = async () => {
     setListStatus("loading");
-    const documents = await API.get("serverless-pdf-chat", "/doc", {});
+    const documents = await API.get("serverless-pdf-chat", "/documents", {});
     setListStatus("idle");
     setDocuments(documents);
   };
@@ -24,7 +23,7 @@ const DocumentList: React.FC = () => {
   return (
     <div>
       <div className="flex justify-between pt-6 pb-4">
-        <h2 className="text-2xl font-bold">My documents</h2>
+        <h2 className="text-xl font-bold">Documents</h2>
         <button
           onClick={fetchData}
           type="button"
@@ -41,19 +40,17 @@ const DocumentList: React.FC = () => {
         {documents &&
           documents.length > 0 &&
           documents.map((document: Document) => (
-            <Link
-              to={`/doc/${document.documentid}/${document.conversations[0].conversationid}/`}
+            <div
               key={document.documentid}
-              className="block p-6 bg-white border border-gray-200 rounded hover:bg-gray-100"
-            >
+              className="block p-6 bg-white border border-gray-200 rounded hover:bg-gray-100">
               <DocumentDetail {...document} />
-            </Link>
+            </div>
           ))}
       </div>
       {listStatus === "idle" && documents.length === 0 && (
         <div className="flex flex-col items-center mt-4">
           <p className="font-bold text-lg">There's nothing here yet...</p>
-          <p className="mt-1">Upload your first document to get started!</p>
+          <p className="mt-1">Upload the first document to get started!</p>
         </div>
       )}
       {listStatus === "loading" && documents.length === 0 && (

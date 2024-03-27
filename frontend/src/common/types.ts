@@ -3,24 +3,25 @@ export interface Document {
   userid: string;
   filename: string;
   filesize: string;
-  docstatus: string;
   created: string;
   pages: string;
-  conversations: {
-    conversationid: string;
-    created: string;
-  }[];
 }
 
 export interface Conversation {
+  userid: string;
   conversationid: string;
-  document: Document;
+  created: string;
+}
+
+export interface ConversationDetail {
+  userid: string;
+  conversationid: string;
+  created: string;
   messages: {
     type: string;
     data: {
       content: string;
       example: boolean;
-      additional_kwargs: {};
     };
   }[];
 }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, KeyboardEvent } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { API } from "aws-amplify";
-import { Conversation } from "../common/types";
+import { Conversation, ConversationDetail } from "../common/types";
 import ChatSidebar from "../components/ChatSidebar";
 import ChatMessages from "../components/ChatMessages";
 import LoadingGrid from "../../public/loading-grid.svg";
@@ -10,28 +10,37 @@ const Document: React.FC = () => {
   const params = useParams();
   const navigate = useNavigate();
 
-  const [conversation, setConversation] = useState<Conversation | null>(null);
+  const [conversations, setConversations] = useState<Conversation[] | undefined>(undefined);
+  const [conversation, setConversation] = useState<ConversationDetail | undefined>(undefined);
   const [loading, setLoading] = React.useState<string>("idle");
   const [messageStatus, setMessageStatus] = useState<string>("idle");
-  const [conversationListStatus, setConversationListStatus] = useState<
-    "idle" | "loading"
-  >("idle");
+  const [conversationListStatus, setConversationListStatus] = useState("idle");
   const [prompt, setPrompt] = useState("");
 
-  const fetchData = async (conversationid = params.conversationid) => {
+  const selectedConversationId = params.conversationid || conversations?.[0]?.conversationid;
+
+  const fetchConversations = async () => {
     setLoading("loading");
-    const conversation = await API.get(
-      "serverless-pdf-chat",
-      `/doc/${params.documentid}/${conversationid}`,
-      {}
-    );
-    setConversation(conversation);
+    const conversations = await API.get("serverless-pdf-chat", "conversations", {});
+    setConversations(conversations);
     setLoading("idle");
   };
 
+  const fetchConversation = async (conversationid: string) => {
+    const response = await API.get("serverless-pdf-chat", `conversations/${conversationid}`, {});
+    setConversation(response.conversation);
+  };
+
   useEffect(() => {
-    fetchData();
+    fetchConversations();
   }, []);
+
+  useEffect(() => {
+    if (selectedConversationId) {
+      fetchConversation(selectedConversationId);
+    }
+  }, [selectedConversationId])
+
 
   const handlePromptChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setPrompt(event.target.value);
@@ -39,20 +48,14 @@ const Document: React.FC = () => {
 
   const addConversation = async () => {
     setConversationListStatus("loading");
-    const newConversation = await API.post(
-      "serverless-pdf-chat",
-      `/doc/${params.documentid}`,
-      {}
-    );
-    fetchData(newConversation.conversationid);
-    navigate(`/doc/${params.documentid}/${newConversation.conversationid}`);
+    const newConversation = await API.post("serverless-pdf-chat", "conversations", {});
+    await fetchConversations();
+    navigate(`/conversations/${newConversation.conversationid}`);
     setConversationListStatus("idle");
   };
 
-  const switchConversation = (e: React.MouseEvent<HTMLButtonElement>) => {
-    const targetButton = e.target as HTMLButtonElement;
-    navigate(`/doc/${params.documentid}/${targetButton.id}`);
-    fetchData(targetButton.id);
+  const switchConversation = (conversationid: string) => {
+    navigate(`/conversations/${conversationid}`);
   };
 
   const handleKeyPress = (event: KeyboardEvent<HTMLInputElement>) => {
@@ -61,66 +64,64 @@ const Document: React.FC = () => {
     }
   };
 
-  const submitMessage = async () => {
-    setMessageStatus("loading");
+  const submitMessage = async () => {    
+    if (conversation) {
+      setMessageStatus("loading");
 
-    if (conversation !== null) {
       const previewMessage = {
         type: "text",
         data: {
           content: prompt,
-          additional_kwargs: {},
           example: false,
         },
       };
 
+      console.log('preview message');
+
       const updatedConversation = {
         ...conversation,
-        messages: [...conversation.messages, previewMessage],
+        messages: [...(conversation.messages || []), previewMessage],
       };
 
       setConversation(updatedConversation);
-    }
 
-    await API.post(
-      "serverless-pdf-chat",
-      `/${conversation?.document.documentid}/${conversation?.conversationid}`,
-      {
-        body: {
-          fileName: conversation?.document.filename,
-          prompt: prompt,
-        },
-      }
-    );
-    setPrompt("");
-    fetchData(conversation?.conversationid);
-    setMessageStatus("idle");
+      await API.post(
+        "serverless-pdf-chat",
+        `conversations/${conversation.conversationid}`,
+        { body: { prompt: prompt } }
+      );
+      setPrompt("");
+      await fetchConversation(conversation.conversationid);
+      setMessageStatus("idle");
+    }
   };
 
   return (
     <div className="">
-      {loading === "loading" && !conversation && (
+      {loading === "loading" && !conversations && (
         <div className="flex flex-col items-center mt-6">
           <img src={LoadingGrid} width={40} />
         </div>
       )}
-      {conversation && (
+      {conversations && (
         <div className="grid grid-cols-12 border border-gray-200 rounded-lg">
           <ChatSidebar
-            conversation={conversation}
-            params={params}
+            conversations={conversations}
+            selectedConversationId={selectedConversationId}
             addConversation={addConversation}
             switchConversation={switchConversation}
             conversationListStatus={conversationListStatus}
           />
-          <ChatMessages
-            prompt={prompt}
-            conversation={conversation}
-            messageStatus={messageStatus}
-            submitMessage={submitMessage}
-            handleKeyPress={handleKeyPress}
-            handlePromptChange={handlePromptChange}
-          />
+          {conversation && (
+            <ChatMessages
+              prompt={prompt}
+              conversation={conversation}
+              messageStatus={messageStatus}
+              submitMessage={submitMessage}
+              handleKeyPress={handleKeyPress}
+              handlePromptChange={handlePromptChange}
+            />
+          )}
         </div>
       )}
     </div>
