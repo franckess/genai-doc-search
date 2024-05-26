@@ -3,7 +3,7 @@ Transform: AWS::Serverless-2016-10-31
 Description: >
   serverless-pdf-chat
 
-  SAM Template for serverless-pdf-chat
+  SAM Template for Serverless QnA chatbot
 
 Globals:
   Function:
@@ -27,6 +27,13 @@ Parameters:
       - amplify
   Repository:
     Type: String
+  UserId:
+    Type: String
+    Description: The user ID for the application
+  KnowledgeBaseDetailsSSMPath:
+    Type: String
+    Description: The SSM parameter path that contains the knowledge base details
+    Default: !Sub "/${AWS::StackName}/knowledge-base"
 
 Conditions:
   DeployToAmplifyHosting: !Equals
@@ -56,6 +63,17 @@ Resources:
         IgnorePublicAcls: true
         RestrictPublicBuckets: true
 
+  KnowledgeBaseDetailsParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Ref KnowledgeBaseDetailsSSMPath
+      Type: String
+      Value: |
+        {
+          "KnowledgeBaseId": "PH0FVU7MAW",
+          "KnowledgeBaseArn": "arn:aws:iam::929348658798:role/service-role/AmazonBedrockExecutionRoleForKnowledgeBase_6akr6"
+        }
+
   DocumentBucketPolicy:
     Type: "AWS::S3::BucketPolicy"
     Properties:
@@ -81,12 +99,19 @@ Resources:
     UpdateReplacePolicy: Delete
     Properties:
       KeySchema:
-        - AttributeName: documentid
+        - AttributeName: userid
           KeyType: HASH
+        - AttributeName: documentid
+          KeyType: RANGE
       AttributeDefinitions:
+        - AttributeName: userid
+          AttributeType: S
         - AttributeName: documentid
           AttributeType: S
-      BillingMode: PAY_PER_REQUEST
+      # BillingMode: PAY_PER_REQUEST
+      ProvisionedThroughput:
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
 
   # Compliments conversation history table with app meta data
   ConversationTable:
@@ -195,7 +220,7 @@ Resources:
         - S3ReadPolicy:
             BucketName: !Sub "${AWS::StackName}-${AWS::Region}-${AWS::AccountId}*"
         - SSMParameterReadPolicy:
-            ParameterName: !Sub "${AWS::StackName}/knowledge-base"
+            ParameterName: !Ref KnowledgeBaseDetailsSSMPath
         - Statement:
             - Sid: "BedrockKnowledgeBase"
               Effect: "Allow"
@@ -206,7 +231,7 @@ Resources:
         Variables:
           DOCUMENT_TABLE: !Ref DocumentTable
           BUCKET: !Sub "${AWS::StackName}-${AWS::Region}-${AWS::AccountId}"
-          KNOWLEDGE_BASE_DETAILS_SSM_PATH: !Sub "/${AWS::StackName}/knowledge-base"
+          KNOWLEDGE_BASE_DETAILS_SSM_PATH: !Ref KnowledgeBaseDetailsSSMPath
       Events:
         S3Event:
           Type: S3
@@ -237,7 +262,7 @@ Resources:
             RestApiId: !Ref Api
             Path: /documents/{documentid}
             Method: GET
-
+ 
   GetAllDocuments:
     Type: AWS::Serverless::Function
     Properties:
@@ -334,7 +359,7 @@ Resources:
                 - "bedrock:InvokeModel"
                 - "bedrock:InvokeModelWithResponseStream"
               Resource:
-                - "arn:aws:bedrock:*::foundation-model/anthropic.claude-v2"
+                - "arn:aws:bedrock:*::foundation-model/mistral.mistral-7b-instruct-v0:2"
             - Sid: "BedrockKnowledgeBase"
               Effect: "Allow"
               Action:

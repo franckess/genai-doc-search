@@ -26,11 +26,11 @@ def lambda_handler(event, context):
 
     bedrock_runtime = boto3.client(
         service_name="bedrock-runtime",
-        region_name="us-east-1",
+        region_name="ap-southeast-2",
     )
 
     llm = Bedrock(
-        model_id="anthropic.claude-v2", client=bedrock_runtime, region_name="us-east-1", streaming=True,
+        model_id="mistral.mistral-7b-instruct-v0:2", client=bedrock_runtime, region_name="ap-southeast-2", streaming=True,
         callbacks=[StreamingStdOutCallbackHandler()]
     )
 

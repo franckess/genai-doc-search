@@ -21,10 +21,13 @@ logger = Logger()
 
 @logger.inject_lambda_context(log_event=True)
 def lambda_handler(event, context):
-    file_name = urllib.parse.unquote_plus(event["Records"][0]["s3"]["object"]["key"])
+    key = urllib.parse.unquote_plus(event["Records"][0]["s3"]["object"]["key"])
+    split = key.split("/")
+    user_id = split[0]
+    file_name = split[1]
     document_id = shortuuid.uuid()
 
-    s3.download_file(BUCKET, file_name, f"/tmp/{file_name}")
+    s3.download_file(BUCKET, key, f"/tmp/{file_name}")
 
     with open(f"/tmp/{file_name}", "rb") as f:
         reader = PyPDF2.PdfReader(f)
@@ -34,6 +37,7 @@ def lambda_handler(event, context):
     timestamp_str = timestamp.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
 
     document = {
+        "userid": user_id,
         "documentid": document_id,
         "filename": file_name,
         "created": timestamp_str,
@@ -54,6 +58,7 @@ def lambda_handler(event, context):
         bedrock.start_ingestion_job(
             knowledgeBaseId=knowledge_base_details['knowledgeBaseId'],
             dataSourceId=knowledge_base_details['dataSourceId']
+            userId=user_id
         )
     except Exception as e:
         logger.error(f'Error triggering bedrock knowledge base sync: {e}')

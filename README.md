@@ -50,14 +50,14 @@ By default, this application uses **Titan Embeddings G1 - Text** to generate emb
 
 > **Important**
 > Before you can use these models with this application, **you must request access in the Amazon Bedrock console**. See the [Model access](https://docs.aws.amazon.com/bedrock/latest/userguide/model-access.html) section of the Bedrock User Guide for detailed instructions.
-> By default, this application is configured to use Amazon Bedrock in the `us-east-1` Region, make sure you request model access in that Region (this does not have to be the same Region that you deploy this stack to).
+> By default, this application is configured to use Amazon Bedrock in the `ap-southeast-2` Region, make sure you request model access in that Region (this does not have to be the same Region that you deploy this stack to).
 
 If you want to change the default models or Bedrock Region, edit `backend/src/generate_response/main.py`:
 
 ```python
 Bedrock(
    model_id="anthropic.claude-v2", #adjust to use different model
-   region_name="us-east-1", #adjust if not using us-east-1
+   region_name="ap-southeast-2", #adjust if not using ap-southeast-2
 )
 ```
 
@@ -104,7 +104,7 @@ Outputs
 -------------------------------------------------------------------------------
 Key                 CognitoUserPool
 Description         -
-Value               us-east-1_gxKtRocFs
+Value               ap-southeast-2_gxKtRocFs
 
 Key                 CognitoUserPoolClient
 Description         -
@@ -112,7 +112,7 @@ Value               874ghcej99f8iuo0lgdpbrmi76k
 
 Key                 ApiGatewayBaseUrl
 Description         -
-Value               https://abcd1234.execute-api.us-east-1.amazonaws.com/dev/
+Value               https://abcd1234.execute-api.ap-southeast-2.amazonaws.com/dev/
 -------------------------------------------------------------------------------
 ```
 
@@ -140,9 +140,9 @@ Create a file named `.env.development` in the `frontend` directory. [Vite will u
 Copy the following file content and replace the values with the outputs provided by AWS SAM:
 
 ```plaintext
-VITE_REGION=us-east-1
-VITE_API_ENDPOINT=https://abcd1234.execute-api.us-east-1.amazonaws.com/dev/
-VITE_USER_POOL_ID=us-east-1_gxKtRocFs
+VITE_REGION=ap-southeast-2
+VITE_API_ENDPOINT=https://abcd1234.execute-api.ap-southeast-2.amazonaws.com/dev/
+VITE_USER_POOL_ID=ap-southeast-2_gxKtRocFs
 VITE_USER_POOL_CLIENT_ID=874ghcej99f8iuo0lgdpbrmi76k
 ```
 

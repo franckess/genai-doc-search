@@ -1,0 +1,6 @@
+{
+    "CodeGPT.apiKey": "Ollama",
+    "CodeGPT.Autocomplete.provider": "Ollama - codellama:code",
+    "CodeGPT.Autocomplete.enabled": true,
+    "CodeGPT.Autocomplete.suggestionDelay": 1000
+}

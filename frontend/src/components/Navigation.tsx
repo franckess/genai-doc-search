@@ -22,7 +22,7 @@ const Navigation: React.FC<NavigationProps> = ({
     <nav className="border-cevo border-b-2">
       <div className="container flex flex-wrap items-center justify-between py-3 ">
         <div className="flex gap-10">
-          <img src="/CEVO-logo.png" className="w-28 h-8"/>
+          <img src="/entlevin.png" className="w-28 h-8"/>
             <Link
               to="/"
               className="inline-flex items-center self-center text-xl font-semibold whitespace-nowrap"
