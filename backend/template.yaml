@@ -247,6 +247,7 @@ Resources:
         Variables:
           DOCUMENT_TABLE: !Ref DocumentTable
           BUCKET: !Sub "${AWS::StackName}-${AWS::Region}-${AWS::AccountId}"
+          KNOWLEDGE_BASE_DETAILS_SSM_PATH: !Ref KnowledgeBaseDetailsParameter
       Events:
         S3Event:
           Type: S3
