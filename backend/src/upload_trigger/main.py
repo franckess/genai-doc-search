@@ -57,7 +57,7 @@ def lambda_handler(event, context):
     try:
         bedrock.start_ingestion_job(
             knowledgeBaseId=knowledge_base_details['knowledgeBaseId'],
-            dataSourceId=knowledge_base_details['dataSourceId']
+            dataSourceId=knowledge_base_details['dataSourceId'],
             userId=user_id
         )
     except Exception as e:
