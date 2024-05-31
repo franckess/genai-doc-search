@@ -1,22 +1,29 @@
 AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
+
 Description: >
-  serverless-pdf-chat
+  serverless-doc-chatai
 
   SAM Template for Serverless QnA chatbot
+# A description of the template's purpose: setting up a serverless Q&A chatbot.
 
 Globals:
   Function:
     Runtime: python3.11
+    # Defines the Python runtime version for all Lambda functions in this template.
     Handler: main.lambda_handler
+    # The method within your code that processes events.
     Architectures:
       - arm64
+    # Specifies the architecture type for the Lambda functions (ARM64).
     Tracing: Active
     Environment:
       Variables:
         LOG_LEVEL: INFO
+    # Environment variables accessible from the function code.
     Layers:
       - !Sub arn:aws:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPythonV2-Arm64:51
+    # Specifies a Lambda layer to use with the function.
 
 Parameters:
   Frontend:
@@ -25,26 +32,39 @@ Parameters:
     AllowedValues:
       - local
       - amplify
+    # Parameter for specifying the frontend deployment type with allowed values.
   Repository:
     Type: String
-  UserId:
+    # Parameter for specifying the code repository.
+  KnowledgeBaseDetailsValue:
     Type: String
-    Description: The user ID for the application
-  KnowledgeBaseDetailsSSMPath:
-    Type: String
-    Description: The SSM parameter path that contains the knowledge base details
-    Default: !Sub "/${AWS::StackName}/knowledge-base"
+    Default: |
+      {
+        "KnowledgeBaseId": "PH0FVU7MAW",
+        "dataSourceId": "IVK2ODWHKU",
+        "KnowledgeBaseArn": "arn:aws:aoss:ap-southeast-2:929348658798:collection/sbof8sqillox9c9x9p6j",
+      }
 
 Conditions:
   DeployToAmplifyHosting: !Equals
     - !Ref Frontend
     - amplify
+    # Condition to check if the deployment should be on AWS Amplify Hosting.
 
 Resources:
+  KnowledgeBaseDetailsParameter:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub "/${AWS::StackName}/knowledge-base"
+      Type: String
+      Value: !Ref KnowledgeBaseDetailsValue
+
   DocumentBucket:
     Type: "AWS::S3::Bucket"
+    # Resource type (Amazon S3 bucket).
     Properties:
-      BucketName: !Sub "${AWS::StackName}-${AWS::Region}-${AWS::AccountId}"
+      BucketName: !Sub "my-app-${AWS::StackName}-${AWS::Region}-${AWS::AccountId}"
+      # Sets a unique name for the S3 bucket using substitution variables.
       CorsConfiguration:
         CorsRules:
           - AllowedHeaders:
@@ -57,25 +77,17 @@ Resources:
               - DELETE
             AllowedOrigins:
               - "*"
+      # Configures CORS to allow all origins and a set of HTTP methods.
       PublicAccessBlockConfiguration:
         BlockPublicAcls: true
         BlockPublicPolicy: true
         IgnorePublicAcls: true
         RestrictPublicBuckets: true
-
-  KnowledgeBaseDetailsParameter:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: !Ref KnowledgeBaseDetailsSSMPath
-      Type: String
-      Value: |
-        {
-          "KnowledgeBaseId": "PH0FVU7MAW",
-          "KnowledgeBaseArn": "arn:aws:iam::929348658798:role/service-role/AmazonBedrockExecutionRoleForKnowledgeBase_6akr6"
-        }
+    # Blocks public access to the bucket.
 
   DocumentBucketPolicy:
     Type: "AWS::S3::BucketPolicy"
+    # Resource type (Amazon S3 bucket policy).
     Properties:
       PolicyDocument:
         Id: EnforceHttpsPolicy
@@ -91,7 +103,9 @@ Resources:
             Condition:
               Bool:
                 "aws:SecureTransport": "false"
+      # Policy to deny all actions on the bucket if the request is not using HTTPS.
       Bucket: !Ref DocumentBucket
+    # Associates the policy with the specified S3 bucket.
 
   DocumentTable:
     Type: AWS::DynamoDB::Table
@@ -108,12 +122,11 @@ Resources:
           AttributeType: S
         - AttributeName: documentid
           AttributeType: S
-      # BillingMode: PAY_PER_REQUEST
       ProvisionedThroughput:
         ReadCapacityUnits: 5
         WriteCapacityUnits: 5
+    # Defines a DynamoDB table for documents with specific attributes and throughput settings.
 
-  # Compliments conversation history table with app meta data
   ConversationTable:
     Type: AWS::DynamoDB::Table
     DeletionPolicy: Delete
@@ -130,8 +143,8 @@ Resources:
         - AttributeName: conversationid
           AttributeType: S
       BillingMode: PAY_PER_REQUEST
+    # Defines a DynamoDB table for conversations with a pay-per-request billing mode.
 
-  # Managed by LangChain's DynamoDBChatMessageHistory
   ConversationHistoryTable:
     Type: AWS::DynamoDB::Table
     DeletionPolicy: Delete
@@ -148,6 +161,7 @@ Resources:
         - AttributeName: ConversationId
           AttributeType: S
       BillingMode: PAY_PER_REQUEST
+    # Another DynamoDB table for storing conversation history, also using pay-per-request billing.
 
   CognitoUserPool:
     Type: AWS::Cognito::UserPool
@@ -167,6 +181,7 @@ Resources:
           RequireNumbers: true
           RequireSymbols: true
           RequireUppercase: true
+    # Configures an Amazon Cognito user pool with specific attributes and policies for user management.
 
   CognitoUserPoolClient:
     Type: AWS::Cognito::UserPoolClient
@@ -174,6 +189,7 @@ Resources:
       UserPoolId: !Ref CognitoUserPool
       ClientName: !Ref CognitoUserPool
       GenerateSecret: false
+    # Defines a client for the Cognito user pool to interact with other services.
 
   Api:
     Type: AWS::Serverless::Api
@@ -189,6 +205,7 @@ Resources:
         AllowOrigin: "'*'"
         AllowHeaders: "'*'"
         AllowMethods: "'*'"
+    # Defines a serverless API gateway with CORS and authorization settings.
 
   GeneratePresignedUrlFunction:
     Type: AWS::Serverless::Function
@@ -208,6 +225,7 @@ Resources:
             RestApiId: !Ref Api
             Path: /generate_presigned_url
             Method: GET
+    # Lambda function to generate presigned URLs for S3, allowing temporary access to objects.
 
   UploadTriggerFunction:
     Type: AWS::Serverless::Function
@@ -219,8 +237,6 @@ Resources:
             TableName: !Ref DocumentTable
         - S3ReadPolicy:
             BucketName: !Sub "${AWS::StackName}-${AWS::Region}-${AWS::AccountId}*"
-        - SSMParameterReadPolicy:
-            ParameterName: !Ref KnowledgeBaseDetailsSSMPath
         - Statement:
             - Sid: "BedrockKnowledgeBase"
               Effect: "Allow"
@@ -231,7 +247,6 @@ Resources:
         Variables:
           DOCUMENT_TABLE: !Ref DocumentTable
           BUCKET: !Sub "${AWS::StackName}-${AWS::Region}-${AWS::AccountId}"
-          KNOWLEDGE_BASE_DETAILS_SSM_PATH: !Ref KnowledgeBaseDetailsSSMPath
       Events:
         S3Event:
           Type: S3
@@ -244,6 +259,7 @@ Resources:
                 Rules:
                   - Name: suffix
                     Value: .pdf
+    # Lambda function triggered by S3 events (e.g., file uploads), with permissions to interact with DynamoDB and S3.
 
   GetDocumentFunction:
     Type: AWS::Serverless::Function
@@ -255,6 +271,7 @@ Resources:
       Environment:
         Variables:
           DOCUMENT_TABLE: !Ref DocumentTable
+          KNOWLEDGE_BASE_DETAILS_SSM_PATH: !Ref KnowledgeBaseDetailsParameter
       Events:
         Root:
           Type: Api
@@ -262,7 +279,8 @@ Resources:
             RestApiId: !Ref Api
             Path: /documents/{documentid}
             Method: GET
- 
+    # Lambda function to retrieve a specific document from DynamoDB, exposed via an API endpoint.
+
   GetAllDocuments:
     Type: AWS::Serverless::Function
     Properties:
@@ -273,6 +291,7 @@ Resources:
       Environment:
         Variables:
           DOCUMENT_TABLE: !Ref DocumentTable
+          KNOWLEDGE_BASE_DETAILS_SSM_PATH: !Ref KnowledgeBaseDetailsParameter
       Events:
         Root:
           Type: Api
@@ -280,6 +299,7 @@ Resources:
             RestApiId: !Ref Api
             Path: /documents
             Method: GET
+    # Lambda function to retrieve all documents from DynamoDB, exposed via an API endpoint.
 
   GetConversations:
     Type: AWS::Serverless::Function
@@ -298,6 +318,7 @@ Resources:
             RestApiId: !Ref Api
             Path: /conversations
             Method: GET
+    # Lambda function to retrieve all conversations from DynamoDB, exposed via an API endpoint.
 
   GetConversation:
     Type: AWS::Serverless::Function
@@ -319,6 +340,7 @@ Resources:
             RestApiId: !Ref Api
             Path: /conversations/{conversationid}
             Method: GET
+    # Lambda function to retrieve a specific conversation from DynamoDB, exposed via an API endpoint.
 
   AddConversationFunction:
     Type: AWS::Serverless::Function
@@ -340,6 +362,7 @@ Resources:
             RestApiId: !Ref Api
             Path: /conversations
             Method: POST
+    # Lambda function to add a new conversation to DynamoDB, exposed via an API endpoint.
 
   GenerateResponseFunction:
     Type: AWS::Serverless::Function
@@ -376,6 +399,7 @@ Resources:
             RestApiId: !Ref Api
             Path: /conversations/{conversationid}
             Method: POST
+    # Lambda function to generate a response for a conversation using a machine learning model, exposed via an API endpoint.
 
   AmplifyApp:
     Type: AWS::Amplify::App
@@ -402,7 +426,7 @@ Resources:
                 paths:
                   - node_modules/**/*
             appRoot: frontend
-      AccessToken: "{{resolve:secretsmanager:serverless-pdf-chat-github-token}}"
+      AccessToken: !Sub "{{resolve:secretsmanager:github-access-token:SecretString}}"
       EnvironmentVariables:
         - Name: AMPLIFY_MONOREPO_APP_ROOT
           Value: frontend
@@ -414,6 +438,7 @@ Resources:
           Value: !Ref CognitoUserPool
         - Name: VITE_USER_POOL_CLIENT_ID
           Value: !Ref CognitoUserPoolClient
+    # Configures an AWS Amplify app with environment variables and build settings for a frontend hosted on Amplify.
 
   AmplifyBranch:
     Type: AWS::Amplify::Branch
@@ -422,6 +447,7 @@ Resources:
       BranchName: main
       AppId: !GetAtt AmplifyApp.AppId
       EnableAutoBuild: true
+    # Defines a branch for the Amplify app which auto-builds when changes are pushed.
 
 Outputs:
   CognitoUserPool:
@@ -430,3 +456,4 @@ Outputs:
     Value: !Ref CognitoUserPoolClient
   ApiGatewayBaseUrl:
     Value: !Sub "https://${Api}.execute-api.${AWS::Region}.${AWS::URLSuffix}/dev/"
+    # Outputs the base URL for the API Gateway, useful for frontend configurations.
