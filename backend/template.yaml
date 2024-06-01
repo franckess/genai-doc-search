@@ -4,7 +4,7 @@ Transform: AWS::Serverless-2016-10-31
 Description: >
   serverless-doc-chatai
 
-  SAM Template for Serverless QnA chatbot
+  SAM Template for Serverless Q&A chatbot
 # A description of the template's purpose: setting up a serverless Q&A chatbot.
 
 Globals:
@@ -278,7 +278,7 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref Api
-            Path: /documents/{documentid}
+            Path: /users/{user_id}/documents/{documentid}
             Method: GET
     # Lambda function to retrieve a specific document from DynamoDB, exposed via an API endpoint.
 
@@ -298,7 +298,7 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref Api
-            Path: /documents
+            Path: /users/{user_id}/documents
             Method: GET
     # Lambda function to retrieve all documents from DynamoDB, exposed via an API endpoint.
 
@@ -317,7 +317,7 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref Api
-            Path: /conversations
+            Path: /users/{user_id}/conversations
             Method: GET
     # Lambda function to retrieve all conversations from DynamoDB, exposed via an API endpoint.
 
@@ -339,7 +339,7 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref Api
-            Path: /conversations/{conversationid}
+            Path: /users/{user_id}/conversations/{conversationid}
             Method: GET
     # Lambda function to retrieve a specific conversation from DynamoDB, exposed via an API endpoint.
 
@@ -361,7 +361,7 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref Api
-            Path: /conversations
+            Path: /users/{user_id}/conversations
             Method: POST
     # Lambda function to add a new conversation to DynamoDB, exposed via an API endpoint.
 
@@ -398,7 +398,7 @@ Resources:
           Type: Api
           Properties:
             RestApiId: !Ref Api
-            Path: /conversations/{conversationid}
+            Path: /users/{user_id}/conversations/{conversationid}/response
             Method: POST
     # Lambda function to generate a response for a conversation using a machine learning model, exposed via an API endpoint.
 

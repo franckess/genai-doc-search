@@ -29,13 +29,18 @@ def s3_key_exists(bucket, key):
 
 @logger.inject_lambda_context(log_event=True)
 def lambda_handler(event, context):
+    user_id = event["queryStringParameters"]["user_id"]
     file_name_full = event["queryStringParameters"]["file_name"]
     file_name = file_name_full.split(".pdf")[0]
 
-    exists = s3_key_exists(BUCKET, f"{file_name_full}")
+    # Include the user_id in the S3 key path
+    user_specific_path = f"{user_id}/{file_name_full}"
+
+    exists = s3_key_exists(BUCKET, user_specific_path)
 
     logger.info(
         {
+            "user_id": user_id,
             "file_name_full": file_name_full,
             "file_name": file_name,
             "exists": exists,
@@ -44,9 +49,9 @@ def lambda_handler(event, context):
 
     if exists:
         suffix = shortuuid.ShortUUID().random(length=4)
-        key = f"{file_name}-{suffix}.pdf"
+        key = f"{user_id}/{file_name}-{suffix}.pdf"
     else:
-        key = f"{file_name}.pdf"
+        key = f"{user_id}/{file_name}.pdf"
 
     presigned_url = s3.generate_presigned_url(
         ClientMethod="put_object",
