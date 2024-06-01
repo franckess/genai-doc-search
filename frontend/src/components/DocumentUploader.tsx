@@ -1,5 +1,6 @@
 import { ChangeEvent, useState, useEffect } from "react";
 import { API } from "aws-amplify";
+import { Auth } from 'aws-amplify';
 import { filesize } from "filesize";
 import {
   DocumentIcon,
@@ -31,20 +32,30 @@ const DocumentUploader: React.FC = () => {
 
   const uploadFile = async () => {
     setButtonStatus("uploading");
-    await API.get("serverless-pdf-chat", "/generate_presigned_url", {
-      headers: { "Content-Type": "application/json" },
-      queryStringParameters: {
-        file_name: selectedFile?.name,
-      },
-    }).then((presigned_url) => {
-      fetch(presigned_url.presignedurl, {
-        method: "PUT",
-        body: selectedFile,
-        headers: { "Content-Type": "application/pdf" },
-      }).then(() => {
-        setButtonStatus("success");
+
+    try {
+      const cognitoUser = await Auth.currentAuthenticatedUser();
+      const userId = cognitoUser.attributes.sub; // 'sub' is the Cognito User Pool ID for the user
+
+      await API.get("serverless-doc-chatai", "/generate_presigned_url", {
+        headers: { "Content-Type": "application/json" },
+        queryStringParameters: {
+          file_name: selectedFile?.name,
+          user_id: userId,
+        },
+      }).then((presigned_url) => {
+        fetch(presigned_url.presignedurl, {
+          method: "PUT",
+          body: selectedFile,
+          headers: { "Content-Type": "application/pdf" },
+        }).then(() => {
+          setButtonStatus("success");
+        });
       });
-    });
+    } catch (error) {
+      console.error('Error fetching authenticated user', error);
+      // Handle errors, e.g., user not authenticated
+    }
   };
 
   const resetInput = () => {

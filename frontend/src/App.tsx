@@ -11,11 +11,13 @@ Amplify.configure({
     userPoolId: import.meta.env.VITE_USER_POOL_ID,
     userPoolWebClientId: import.meta.env.VITE_USER_POOL_CLIENT_ID,
     region: import.meta.env.VITE_API_REGION,
+    mandatorySignIn: true,
+    authenticationFlowType: 'USER_SRP_AUTH'
   },
   API: {
     endpoints: [
       {
-        name: "serverless-pdf-chat",
+        name: "serverless-doc-chatai",
         endpoint: import.meta.env.VITE_API_ENDPOINT,
         region: import.meta.env.VITE_API_REGION,
         custom_header: async () => {

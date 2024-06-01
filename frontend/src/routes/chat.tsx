@@ -21,13 +21,13 @@ const Document: React.FC = () => {
 
   const fetchConversations = async () => {
     setLoading("loading");
-    const conversations = await API.get("serverless-pdf-chat", "conversations", {});
+    const conversations = await API.get("serverless-doc-chatai", "conversations", {});
     setConversations(conversations);
     setLoading("idle");
   };
 
   const fetchConversation = async (conversationid: string) => {
-    const response = await API.get("serverless-pdf-chat", `conversations/${conversationid}`, {});
+    const response = await API.get("serverless-doc-chatai", `conversations/${conversationid}`, {});
     setConversation(response.conversation);
   };
 
@@ -48,7 +48,7 @@ const Document: React.FC = () => {
 
   const addConversation = async () => {
     setConversationListStatus("loading");
-    const newConversation = await API.post("serverless-pdf-chat", "conversations", {});
+    const newConversation = await API.post("serverless-doc-chatai", "conversations", {});
     await fetchConversations();
     navigate(`/conversations/${newConversation.conversationid}`);
     setConversationListStatus("idle");
@@ -86,7 +86,7 @@ const Document: React.FC = () => {
       setConversation(updatedConversation);
 
       await API.post(
-        "serverless-pdf-chat",
+        "serverless-doc-chatai",
         `conversations/${conversation.conversationid}`,
         { body: { prompt: prompt } }
       );

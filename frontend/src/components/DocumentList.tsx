@@ -11,7 +11,7 @@ const DocumentList: React.FC = () => {
 
   const fetchData = async () => {
     setListStatus("loading");
-    const documents = await API.get("serverless-pdf-chat", "/documents", {});
+    const documents = await API.get("serverless-doc-chatai", "/documents", {});
     setListStatus("idle");
     setDocuments(documents);
   };

@@ -39,7 +39,7 @@ This sample application allows you to ask natural language questions of any PDF 
 Clone this repository:
 
 ```bash
-git clone https://github.com/aws-samples/serverless-pdf-chat.git
+git clone https://github.com/aws-samples/serverless-doc-chatai.git
 ```
 
 ### Amazon Bedrock setup
@@ -116,7 +116,7 @@ Value               https://abcd1234.execute-api.ap-southeast-2.amazonaws.com/de
 -------------------------------------------------------------------------------
 ```
 
-You can find the same outputs in the `Outputs` tab of the `serverless-pdf-chat` stack in the AWS CloudFormation console. In the next section, you will use these outputs to run the React frontend locally and connect to the deployed resources in AWS.
+You can find the same outputs in the `Outputs` tab of the `serverless-doc-chatai` stack in the AWS CloudFormation console. In the next section, you will use these outputs to run the React frontend locally and connect to the deployed resources in AWS.
 
 ### Amazon Knowledge Base for Bedrock setup
 
@@ -129,8 +129,8 @@ Currently cloudformation does not natively support provisioning knowledge bases 
    Embeddings model: e.g. Titan Embeddings G1 -Text  
    Vector database: Quick create new vector store (OpenSearch)
 
-1. Once the knowledge base is setup, add a SSM parameter in the same region as the SAM stack that contains details of the knowledge base. The application will use these details for connecting. For example if the stack was called `serverless-pdf-chat`, then the following SSM parameter is required:  
-    - Name: `/serverless-pdf-chat/knowledge-base` 
+1. Once the knowledge base is setup, add a SSM parameter in the same region as the SAM stack that contains details of the knowledge base. The application will use these details for connecting. For example if the stack was called `serverless-doc-chatai`, then the following SSM parameter is required:  
+    - Name: `/serverless-doc-chatai/knowledge-base` 
     - Value (json string): `{"knowledgeBaseId": "xyz", "dataSourceId": "xyz"}`
 
 ### Run the React frontend locally
@@ -178,9 +178,9 @@ You can optionally deploy the React frontend with [Amplify Hosting](https://aws.
 
 To set up Amplify Hosting:
 
-1. Fork this GitHub repository and take note of your repository URL, for example `https://github.com/user/serverless-pdf-chat/`.
+1. Fork this GitHub repository and take note of your repository URL, for example `https://github.com/user/serverless-doc-chatai/`.
 1. Create a GitHub fine-grained access token for the new repository by following [this guide](https://docs.aws.amazon.com/amplify/latest/userguide/setting-up-GitHub-access.html). For the **Repository permissions**, select **Read and write** for **Content** and **Webhooks**.
-1. Create a new secret called `serverless-pdf-chat-github-token` in AWS Secrets Manager and input your fine-grained access token as plaintext. Select the **Plaintext** tab and confirm your secret looks like this:
+1. Create a new secret called `serverless-doc-chatai-github-token` in AWS Secrets Manager and input your fine-grained access token as plaintext. Select the **Plaintext** tab and confirm your secret looks like this:
 
    ```json
    github_pat_T2wyo------------------------------------------------------------------------rs0Pp
