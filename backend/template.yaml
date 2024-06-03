@@ -236,13 +236,13 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref DocumentTable
         - S3ReadPolicy:
-            BucketName: !Sub "${AWS::StackName}-${AWS::Region}-${AWS::AccountId}*"
+            BucketName: !Sub "my-app-${AWS::StackName}-${AWS::Region}-${AWS::AccountId}*"
         - Statement:
             - Sid: "AllowS3HeadObject"
               Effect: "Allow"
               Action:
                 - "s3:HeadObject"
-              Resource: !Sub "arn:aws:s3:::${AWS::StackName}-${AWS::Region}-${AWS::AccountId}*/*"
+              Resource: !Sub "arn:aws:s3:::my-app-${AWS::StackName}-${AWS::Region}-${AWS::AccountId}*/*"
             - Sid: "BedrockKnowledgeBase"
               Effect: "Allow"
               Action:
