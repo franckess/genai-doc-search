@@ -19,6 +19,16 @@ s3 = boto3.client("s3")
 ssm = boto3.client('ssm')
 logger = Logger()
 
+def fix_json(json_string):
+    # Replace single quotes with double quotes and escaping internal quotes if needed
+    fixed_json = json_string.replace("'", '"')
+    try:
+        # Try loading the JSON to check if it's valid
+        data = json.loads(fixed_json)
+        return data
+    except json.JSONDecodeError as e:
+        logger.error(f"Failed to decode JSON: {e}")
+        return None
 
 @logger.inject_lambda_context(log_event=True)
 def lambda_handler(event, context):
@@ -27,13 +37,6 @@ def lambda_handler(event, context):
     user_id = split[0]
     file_name = split[1]
     document_id = shortuuid.uuid()
-
-    # # Check if the document exists in the bucket
-    # try:
-    #     s3.head_object(Bucket=BUCKET, Key=key)
-    # except s3.exceptions.NoSuchKey:
-    #     logger.error(f"Document not found in the bucket: {key}")
-    #     return {"statusCode": 404, "body": json.dumps("Document not found.")}
 
     s3.download_file(BUCKET, key, f"/tmp/{file_name}")
 
@@ -55,26 +58,20 @@ def lambda_handler(event, context):
 
     document_table.put_item(Item=document)
 
-    # Simplistically trigger ingestion job. This does not cater
-    # for situations were a job is already running or how to avoid unecessarily 
-    # triggering jobs if multiple documents are uploaded in quick succession etc
-    
     param_response = ssm.get_parameter(Name=KNOWLEDGE_BASE_DETAILS_SSM_PATH)
-
     print('***********************************')
     pprint.pp(param_response['Parameter']['Value'], depth=1)
-    
-    try:
-        knowledge_base_details = json.loads(param_response['Parameter']['Value'])
-        print(knowledge_base_details)
-    except json.JSONDecodeError as e:
-        print(f"Error decoding SSM Parameter value: {e}")
 
-    try:
-        bedrock.start_ingestion_job(
-            knowledgeBaseId=knowledge_base_details['knowledgeBaseId'],
-            dataSourceId=knowledge_base_details['dataSourceId'],
-            userId=user_id
-        )
-    except Exception as e:
-        logger.error(f'Error triggering bedrock knowledge base sync: {e}')
+    # Use the fix_json function to attempt to correct and parse the JSON
+    knowledge_base_details = fix_json(param_response['Parameter']['Value'])
+    if knowledge_base_details:
+        try:
+            bedrock.start_ingestion_job(
+                knowledgeBaseId=knowledge_base_details['knowledgeBaseId'],
+                dataSourceId=knowledge_base_details['dataSourceId'],
+                userId=user_id
+            )
+        except Exception as e:
+            logger.error(f'Error triggering bedrock knowledge base sync: {e}')
+    else:
+        logger.error("Failed to fix and decode JSON from SSM parameter.")
