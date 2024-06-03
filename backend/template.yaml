@@ -238,6 +238,11 @@ Resources:
         - S3ReadPolicy:
             BucketName: !Sub "${AWS::StackName}-${AWS::Region}-${AWS::AccountId}*"
         - Statement:
+            - Sid: "AllowS3HeadObject"
+              Effect: "Allow"
+              Action:
+                - "s3:HeadObject"
+              Resource: !Sub "arn:aws:s3:::${AWS::StackName}-${AWS::Region}-${AWS::AccountId}*/*"
             - Sid: "BedrockKnowledgeBase"
               Effect: "Allow"
               Action:

@@ -28,6 +28,13 @@ def lambda_handler(event, context):
     file_name = split[1]
     document_id = shortuuid.uuid()
 
+    # # Check if the document exists in the bucket
+    # try:
+    #     s3.head_object(Bucket=BUCKET, Key=key)
+    # except s3.exceptions.NoSuchKey:
+    #     logger.error(f"Document not found in the bucket: {key}")
+    #     return {"statusCode": 404, "body": json.dumps("Document not found.")}
+
     s3.download_file(BUCKET, key, f"/tmp/{file_name}")
 
     with open(f"/tmp/{file_name}", "rb") as f:
