@@ -2,7 +2,7 @@ AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 
 Description: >
-  ${AWS::StackName}
+  serverless-doc-chatai
 
   SAM Template for Serverless Q&A chatbot
 # A description of the template's purpose: setting up a serverless Q&A chatbot.
@@ -237,7 +237,7 @@ Resources:
               Effect: "Allow"
               Action:
                 - "ssm:GetParameter"
-              Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/*"
+              Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/knowledge-base"
       Environment:
         Variables:
           DOCUMENT_TABLE: !Ref DocumentTable
