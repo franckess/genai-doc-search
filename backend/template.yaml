@@ -2,7 +2,7 @@ AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 
 Description: >
-  serverless-doc-chatai
+  ${AWS::StackName}
 
   SAM Template for Serverless Q&A chatbot
 # A description of the template's purpose: setting up a serverless Q&A chatbot.
@@ -36,14 +36,6 @@ Parameters:
   Repository:
     Type: String
     # Parameter for specifying the code repository.
-  KnowledgeBaseDetailsValue:
-    Type: String
-    Default: |
-      {
-        "KnowledgeBaseId": "PH0FVU7MAW",
-        "dataSourceId": "IVK2ODWHKU",
-        "KnowledgeBaseArn": "arn:aws:aoss:ap-southeast-2:929348658798:collection/sbof8sqillox9c9x9p6j",
-      }
 
 Conditions:
   DeployToAmplifyHosting: !Equals
@@ -52,12 +44,12 @@ Conditions:
     # Condition to check if the deployment should be on AWS Amplify Hosting.
 
 Resources:
-  KnowledgeBaseDetailsParameter:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: !Sub "/${AWS::StackName}/knowledge-base"
-      Type: String
-      Value: !Ref KnowledgeBaseDetailsValue
+  # KnowledgeBaseDetailsParameter:
+  #   Type: AWS::SSM::Parameter
+  #   Properties:
+  #     Name: !Sub "/${AWS::StackName}/knowledge-base"
+  #     Type: String
+  #     Value: !Ref KnowledgeBaseDetailsValue
 
   DocumentBucket:
     Type: "AWS::S3::Bucket"
@@ -257,7 +249,7 @@ Resources:
         Variables:
           DOCUMENT_TABLE: !Ref DocumentTable
           BUCKET: !Sub "my-app-${AWS::StackName}-${AWS::Region}-${AWS::AccountId}"
-          KNOWLEDGE_BASE_DETAILS_SSM_PATH: !Ref KnowledgeBaseDetailsParameter
+          KNOWLEDGE_BASE_DETAILS_SSM_PATH: !Sub "{{resolve:ssm:/${AWS::StackName}/knowledge-base:1}}"
       Events:
         S3Event:
           Type: S3
@@ -282,7 +274,7 @@ Resources:
       Environment:
         Variables:
           DOCUMENT_TABLE: !Ref DocumentTable
-          KNOWLEDGE_BASE_DETAILS_SSM_PATH: !Ref KnowledgeBaseDetailsParameter
+          KNOWLEDGE_BASE_DETAILS_SSM_PATH: !Sub "{{resolve:ssm:/${AWS::StackName}/knowledge-base:1}}"
       Events:
         Root:
           Type: Api
@@ -302,7 +294,7 @@ Resources:
       Environment:
         Variables:
           DOCUMENT_TABLE: !Ref DocumentTable
-          KNOWLEDGE_BASE_DETAILS_SSM_PATH: !Ref KnowledgeBaseDetailsParameter
+          KNOWLEDGE_BASE_DETAILS_SSM_PATH: !Sub "{{resolve:ssm:/${AWS::StackName}/knowledge-base:1}}"
       Events:
         Root:
           Type: Api
@@ -385,7 +377,7 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref ConversationHistoryTable
         - SSMParameterReadPolicy:
-            ParameterName: !Sub "${AWS::StackName}/knowledge-base"
+            ParameterName: !Sub "{{resolve:ssm:/${AWS::StackName}/knowledge-base:1}}"
         - Statement:
             - Sid: "BedrockModel"
               Effect: "Allow"
@@ -402,7 +394,7 @@ Resources:
       Environment:
         Variables:
           CONVERSATION_HISTORY_TABLE: !Ref ConversationHistoryTable
-          KNOWLEDGE_BASE_DETAILS_SSM_PATH: !Sub "/${AWS::StackName}/knowledge-base"
+          KNOWLEDGE_BASE_DETAILS_SSM_PATH: !Sub "{{resolve:ssm:/${AWS::StackName}/knowledge-base:1}}"
       Events:
         Root:
           Type: Api
@@ -467,4 +459,6 @@ Outputs:
     Value: !Ref CognitoUserPoolClient
   ApiGatewayBaseUrl:
     Value: !Sub "https://${Api}.execute-api.${AWS::Region}.${AWS::URLSuffix}/dev/"
-    # Outputs the base URL for the API Gateway, useful for frontend configurations.
+  KnowledgeBaseDetails:
+    Description: "Details of the Knowledge Base"
+    Value: !Sub "{{resolve:ssm:/${AWS::StackName}/knowledge-base:1}}"
