@@ -6,6 +6,7 @@ import shortuuid
 import urllib
 from aws_lambda_powertools import Logger
 import json
+import pprint
 
 DOCUMENT_TABLE = os.environ["DOCUMENT_TABLE"]
 BUCKET = os.environ["BUCKET"]
@@ -59,6 +60,9 @@ def lambda_handler(event, context):
     # triggering jobs if multiple documents are uploaded in quick succession etc
     
     param_response = ssm.get_parameter(Name=KNOWLEDGE_BASE_DETAILS_SSM_PATH)
+
+    print('***********************************')
+    pprint.pp(param_response['Parameter']['Value'], depth=1)
     
     try:
         knowledge_base_details = json.loads(param_response['Parameter']['Value'])
