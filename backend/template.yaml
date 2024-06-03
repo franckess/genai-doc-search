@@ -236,13 +236,18 @@ Resources:
         - DynamoDBCrudPolicy:
             TableName: !Ref DocumentTable
         - S3ReadPolicy:
-            BucketName: !Sub "my-app-${AWS::StackName}-${AWS::Region}-${AWS::AccountId}*"
+            BucketName: !Sub "${AWS::StackName}-${AWS::Region}-${AWS::AccountId}*"
         - Statement:
             - Sid: "BedrockKnowledgeBase"
               Effect: "Allow"
               Action:
                 - "bedrock:StartIngestionJob"
               Resource: !Sub "arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:knowledge-base/*"
+            - Sid: "SSMParameterAccess"
+              Effect: "Allow"
+              Action:
+                - "ssm:GetParameter"
+              Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/knowledge-base"
       Environment:
         Variables:
           DOCUMENT_TABLE: !Ref DocumentTable
