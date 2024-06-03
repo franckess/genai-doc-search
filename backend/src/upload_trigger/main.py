@@ -21,8 +21,7 @@ logger = Logger()
 
 @logger.inject_lambda_context(log_event=True)
 def lambda_handler(event, context):
-    key = urllib.parse.unquote_plus(event["Records"][0]["s3"]["object"]["key"])
-    print(key)  
+    key = urllib.parse.unquote_plus(event["Records"][0]["s3"]["object"]["key"]) 
     split = key.split("/")
     user_id = split[0]
     file_name = split[1]
@@ -58,9 +57,14 @@ def lambda_handler(event, context):
     # Simplistically trigger ingestion job. This does not cater
     # for situations were a job is already running or how to avoid unecessarily 
     # triggering jobs if multiple documents are uploaded in quick succession etc
-
+    
     param_response = ssm.get_parameter(Name=KNOWLEDGE_BASE_DETAILS_SSM_PATH)
-    knowledge_base_details = json.loads(param_response['Parameter']['Value'])
+    
+    try:
+        knowledge_base_details = json.loads(param_response['Parameter']['Value'])
+        print(knowledge_base_details)
+    except json.JSONDecodeError as e:
+        print(f"Error decoding SSM Parameter value: {e}")
 
     try:
         bedrock.start_ingestion_job(
