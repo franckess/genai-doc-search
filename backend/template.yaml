@@ -44,13 +44,6 @@ Conditions:
     # Condition to check if the deployment should be on AWS Amplify Hosting.
 
 Resources:
-  # KnowledgeBaseDetailsParameter:
-  #   Type: AWS::SSM::Parameter
-  #   Properties:
-  #     Name: !Sub "/${AWS::StackName}/knowledge-base"
-  #     Type: String
-  #     Value: !Ref KnowledgeBaseDetailsValue
-
   DocumentBucket:
     Type: "AWS::S3::Bucket"
     # Resource type (Amazon S3 bucket).
@@ -244,7 +237,7 @@ Resources:
               Effect: "Allow"
               Action:
                 - "ssm:GetParameter"
-              Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/${AWS::StackName}/knowledge-base"
+              Resource: !Sub "arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/*"
       Environment:
         Variables:
           DOCUMENT_TABLE: !Ref DocumentTable
