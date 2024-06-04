@@ -267,7 +267,7 @@ Resources:
       Environment:
         Variables:
           DOCUMENT_TABLE: !Ref DocumentTable
-          KNOWLEDGE_BASE_DETAILS_SSM_PATH: !Sub "${AWS::StackName}/knowledge-base"
+          KNOWLEDGE_BASE_DETAILS_SSM_PATH: !Sub "/${AWS::StackName}/knowledge-base"
       Events:
         Root:
           Type: Api
@@ -287,7 +287,7 @@ Resources:
       Environment:
         Variables:
           DOCUMENT_TABLE: !Ref DocumentTable
-          KNOWLEDGE_BASE_DETAILS_SSM_PATH: !Sub "${AWS::StackName}/knowledge-base"
+          KNOWLEDGE_BASE_DETAILS_SSM_PATH: !Sub "/${AWS::StackName}/knowledge-base"
       Events:
         Root:
           Type: Api
@@ -392,7 +392,7 @@ Resources:
       Environment:
         Variables:
           CONVERSATION_HISTORY_TABLE: !Ref ConversationHistoryTable
-          KNOWLEDGE_BASE_DETAILS_SSM_PATH: !Sub "${AWS::StackName}/knowledge-base"
+          KNOWLEDGE_BASE_DETAILS_SSM_PATH: !Sub "/${AWS::StackName}/knowledge-base"
       Events:
         Root:
           Type: Api

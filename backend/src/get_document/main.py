@@ -10,7 +10,7 @@ logger = Logger()
 
 @logger.inject_lambda_context(log_event=True)
 def lambda_handler(event, context):
-    user_id = event["requestContext"]["authorizer"]["claims"]["sub"]
+    user_id = event["pathParameters"]["userid"]
     document_id = event["pathParameters"]["documentid"]
 
     response = document_table.get_item(
