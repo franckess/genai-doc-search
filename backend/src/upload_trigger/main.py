@@ -68,8 +68,7 @@ def lambda_handler(event, context):
         try:
             bedrock.start_ingestion_job(
                 knowledgeBaseId=knowledge_base_details['knowledgeBaseId'],
-                dataSourceId=knowledge_base_details['dataSourceId'],
-                userId=user_id
+                dataSourceId=knowledge_base_details['dataSourceId']
             )
         except Exception as e:
             logger.error(f'Error triggering bedrock knowledge base sync: {e}')
